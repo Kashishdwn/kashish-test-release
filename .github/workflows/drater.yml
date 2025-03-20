@@ -32,6 +32,7 @@ jobs:
           echo "## 🚀 Changelog since ${{ github.event.inputs.previous_version }}" > changelog.md
           echo "" >> changelog.md
 
+          # Check changes per directory
           for dir in aws istio kubernetes; do
             echo "### 🔹 ${dir^} Changes" >> changelog.md
             CHANGES=$(git log --pretty=format:"- %s (@%an) [#%h]" ${{ github.event.inputs.previous_version }}..HEAD -- $dir/ || true)
@@ -42,6 +43,17 @@ jobs:
             fi
             echo "" >> changelog.md
           done
+
+          # Collect Misc Changes (Changes outside aws, istio, kubernetes)
+          echo "### 🛠 Misc Changes" >> changelog.md
+          MISC_CHANGES=$(git log --pretty=format:"- %s (@%an) [#%h]" --invert-grep --grep="aws/" --grep="istio/" --grep="kubernetes/" ${{ github.event.inputs.previous_version }}..HEAD || true)
+          if [[ -n "$MISC_CHANGES" ]]; then
+            echo "$MISC_CHANGES" >> changelog.md
+            HAS_MISC_CHANGES=true
+          else
+            echo "- No other changes" >> changelog.md
+          fi
+          echo "" >> changelog.md
 
           echo "**[🔍 See all changes](https://github.com/${{ github.repository }}/compare/${{ github.event.inputs.previous_version }}...$RELEASE_TAG)**" >> changelog.md
 
