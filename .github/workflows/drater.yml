@@ -3,13 +3,14 @@ name: "Manual Release Draft"
 on:
   workflow_dispatch:
     inputs:
-      previous_release_version:
+      previous_version:
         description: "Previous release version (e.g., v1.0.0)"
         required: true
         type: string
 
 permissions:
-  contents: write
+  contents: write  # ✅ Required for creating releases
+  pull-requests: read  # ✅ Required for fetching contributors
 
 jobs:
   create_release_draft:
@@ -19,7 +20,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Fetch all history to get accurate commit logs
+          fetch-depth: 0  # Fetch full history for accurate logs
 
       - name: Generate Release Tag
         run: |
@@ -28,13 +29,37 @@ jobs:
 
       - name: Generate Changelog
         run: |
-          echo "## Changelog since ${{ github.event.inputs.previous_release_version }}" > changelog.md
-          git log --pretty=format:"- %s (%an)" ${{ github.event.inputs.previous_release_version }}..main >> changelog.md
+          echo "## Changelog since ${{ github.event.inputs.previous_version }}" > changelog.md
           echo "" >> changelog.md
-          echo "**[See all changes](https://github.com/${{ github.repository }}/compare/${{ github.event.inputs.previous_release_version }}...$RELEASE_TAG)**" >> changelog.md
+
+          echo "### 🚀 Features" >> changelog.md
+          git log --pretty=format:"- %s (%an) [#%h]" --grep="feature" ${{ github.event.inputs.previous_version }}..main >> changelog.md || echo "- No new features" >> changelog.md
+          echo "" >> changelog.md
+
+          echo "### 🐛 Bug Fixes" >> changelog.md
+          git log --pretty=format:"- %s (%an) [#%h]" --grep="fix" ${{ github.event.inputs.previous_version }}..main >> changelog.md || echo "- No bug fixes" >> changelog.md
+          echo "" >> changelog.md
+
+          echo "### 🧰 Maintenance" >> changelog.md
+          git log --pretty=format:"- %s (%an) [#%h]" --grep="maintenance" ${{ github.event.inputs.previous_version }}..main >> changelog.md || echo "- No maintenance updates" >> changelog.md
+          echo "" >> changelog.md
+
+          echo "**[See all changes](https://github.com/${{ github.repository }}/compare/${{ github.event.inputs.previous_version }}...$RELEASE_TAG)**" >> changelog.md
+
+      - name: Get Contributors
+        run: |
+          echo "### Contributors" >> changelog.md
+          git shortlog -sne ${{ github.event.inputs.previous_version }}..main | awk '{$1=""; print "- "$0}' >> changelog.md
+          echo "" >> changelog.md
 
       - name: Display Changelog
         run: cat changelog.md
+
+      - name: Upload Release Assets
+        run: |
+          mkdir -p release-assets
+          echo "Sample release asset" > release-assets/sample.txt  # Example asset
+        if: always()
 
       - name: Create Draft Release
         uses: softprops/action-gh-release@v2
@@ -43,5 +68,6 @@ jobs:
           name: "Release ${{ env.RELEASE_TAG }}"
           body_path: changelog.md
           draft: true
+          files: release-assets/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
