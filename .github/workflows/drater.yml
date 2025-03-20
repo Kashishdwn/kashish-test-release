@@ -55,7 +55,7 @@ jobs:
           fi
           echo "" >> changelog.md
 
-          echo "**[🔍 See all changes](https://github.com/${{ github.repository }}/compare/${{ github.event.inputs.previous_version }}...$RELEASE_TAG)**" >> changelog.md
+          echo "**See details of [all code changes](https://github.com/${{ github.repository }}/compare/${{ github.event.inputs.previous_version }}...$RELEASE_TAG) since ${{ github.event.inputs.previous_version }}**" >> changelog.md
 
       # - name: Display Changelog
       #   run: cat changelog.md
