@@ -34,7 +34,7 @@ jobs:
 
           # Check changes per directory
           for dir in aws istio kubernetes; do
-            echo "### 🔹 ${dir^} Changes" >> changelog.md
+            echo "### 🔹 ${dir^} Kyverno Policies" >> changelog.md
             CHANGES=$(git log --pretty=format:"- %s (@%an) [#%h]" ${{ github.event.inputs.previous_version }}..HEAD -- $dir/ || true)
             if [[ -z "$CHANGES" ]]; then
               echo "- No changes in $dir/" >> changelog.md
@@ -57,14 +57,8 @@ jobs:
 
           echo "**[🔍 See all changes](https://github.com/${{ github.repository }}/compare/${{ github.event.inputs.previous_version }}...$RELEASE_TAG)**" >> changelog.md
 
-      # - name: Get Contributors
-      #   run: |
-      #     echo "### Contributors" >> changelog.md
-      #     git shortlog -sne ${{ github.event.inputs.previous_version }}..main | awk '{$1=""; print "- "$0}' >> changelog.md
-      #     echo "" >> changelog.md
-
-      - name: Display Changelog
-        run: cat changelog.md
+      # - name: Display Changelog
+      #   run: cat changelog.md
 
       - name: Create Draft Release
         uses: softprops/action-gh-release@v2
