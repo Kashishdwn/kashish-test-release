@@ -1,0 +1,44 @@
+name: "Manual Release Draft"
+
+on:
+  workflow_dispatch:
+    inputs:
+      previous_release_version:
+        description: "Previous release version (e.g., v1.0.0)"
+        required: true
+        type: string
+
+jobs:
+  create_release_draft:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history to get accurate commit logs
+
+      - name: Generate Release Tag
+        run: |
+          RELEASE_TAG="release/$(date +%Y%m%d%H%M%S)"
+          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+
+      - name: Generate Changelog
+        run: |
+          echo "## Changelog since ${{ github.event.inputs.previous_release_version }}" > changelog.md
+          git log --pretty=format:"- %s (%an)" ${{ github.event.inputs.previous_release_version }}..main >> changelog.md
+          echo "" >> changelog.md
+          echo "**[See all changes](https://github.com/${{ github.repository }}/compare/${{ github.event.inputs.previous_release_version }}...$RELEASE_TAG)**" >> changelog.md
+
+      - name: Display Changelog
+        run: cat changelog.md
+
+      - name: Create Draft Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: "Release ${{ env.RELEASE_TAG }}"
+          body_path: changelog.md
+          draft: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
