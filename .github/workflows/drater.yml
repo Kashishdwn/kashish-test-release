@@ -29,30 +29,40 @@ jobs:
 
       - name: Generate Changelog
         run: |
-          echo "## Changelog since ${{ github.event.inputs.previous_version }}" > changelog.md
+          echo "## 🚀 Changelog since ${{ github.event.inputs.previous_version }}" > changelog.md
           echo "" >> changelog.md
 
           for dir in aws istio kubernetes; do
             echo "### 🔹 ${dir^} Changes" >> changelog.md
-            git log --pretty=format:"- %s (@%an) [#%h]" -- ${{ github.event.inputs.previous_version }}..main -- $dir/ >> changelog.md || echo "- No changes in $dir/" >> changelog.md
+            CHANGES=$(git log --pretty=format:"- %s (@%an) [#%h]" ${{ github.event.inputs.previous_version }}..HEAD -- $dir/ || true)
+            if [[ -z "$CHANGES" ]]; then
+              echo "- No changes in $dir/" >> changelog.md
+            else
+              echo "$CHANGES" >> changelog.md
+            fi
             echo "" >> changelog.md
           done
 
-          echo "**[See all changes](https://github.com/${{ github.repository }}/compare/${{ github.event.inputs.previous_version }}...$RELEASE_TAG)**" >> changelog.md
+          echo "**[🔍 See all changes](https://github.com/${{ github.repository }}/compare/${{ github.event.inputs.previous_version }}...$RELEASE_TAG)**" >> changelog.md
 
       - name: Get Contributors
         run: |
-          echo "### Contributors" >> changelog.md
-          CONTRIBUTORS=$(git log --format="%an %ae" ${{ github.event.inputs.previous_version }}..main | sort | uniq)
+          echo "## 👥 Contributors" >> changelog.md
+          CONTRIBUTORS=$(git log --format="%ae %an" ${{ github.event.inputs.previous_version }}..HEAD | sort -u)
 
-          while IFS= read -r contributor; do
-            name=$(echo $contributor | awk '{print $1, $2}')
-            email=$(echo $contributor | awk '{print $3}')
-            username=$(echo $email | sed -E 's/@.*//')
+          while IFS= read -r line; do
+            email=$(echo $line | awk '{print $1}')
+            name=$(echo $line | cut -d ' ' -f2-)
 
-            echo "![Avatar](https://github.com/$username.png?size=50) [$username](https://github.com/$username)" >> changelog.md
+            # Fetch GitHub username using API
+            username=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/search/users?q=$email+in:email" | jq -r '.items[0].login')
+
+            # Fallback if username is not found
+            [[ "$username" == "null" || -z "$username" ]] && username="$name"
+
+            echo "- ![Avatar](https://github.com/$username.png?size=50) **[$username](https://github.com/$username)**" >> changelog.md
           done <<< "$CONTRIBUTORS"
-          
+
           echo "" >> changelog.md
 
       - name: Display Changelog
@@ -62,7 +72,6 @@ jobs:
         run: |
           mkdir -p release-assets
           echo "Sample release asset" > release-assets/sample.txt
-        if: always()
 
       - name: Create Draft Release
         uses: softprops/action-gh-release@v2
