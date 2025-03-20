@@ -9,8 +9,8 @@ on:
         type: string
 
 permissions:
-  contents: write  # ✅ Required for creating releases
-  pull-requests: read  # ✅ Required for fetching contributors
+  contents: write
+  pull-requests: read
 
 jobs:
   create_release_draft:
@@ -20,7 +20,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch full history for accurate logs
+          fetch-depth: 0
 
       - name: Generate Release Tag
         run: |
@@ -32,24 +32,27 @@ jobs:
           echo "## Changelog since ${{ github.event.inputs.previous_version }}" > changelog.md
           echo "" >> changelog.md
 
-          echo "### 🚀 Features" >> changelog.md
-          git log --pretty=format:"- %s (%an) [#%h]" --grep="feature" ${{ github.event.inputs.previous_version }}..main >> changelog.md || echo "- No new features" >> changelog.md
-          echo "" >> changelog.md
-
-          echo "### 🐛 Bug Fixes" >> changelog.md
-          git log --pretty=format:"- %s (%an) [#%h]" --grep="fix" ${{ github.event.inputs.previous_version }}..main >> changelog.md || echo "- No bug fixes" >> changelog.md
-          echo "" >> changelog.md
-
-          echo "### 🧰 Maintenance" >> changelog.md
-          git log --pretty=format:"- %s (%an) [#%h]" --grep="maintenance" ${{ github.event.inputs.previous_version }}..main >> changelog.md || echo "- No maintenance updates" >> changelog.md
-          echo "" >> changelog.md
+          for dir in aws istio kubernetes; do
+            echo "### 🔹 ${dir^} Changes" >> changelog.md
+            git log --pretty=format:"- %s (@%an) [#%h]" -- ${{ github.event.inputs.previous_version }}..main -- $dir/ >> changelog.md || echo "- No changes in $dir/" >> changelog.md
+            echo "" >> changelog.md
+          done
 
           echo "**[See all changes](https://github.com/${{ github.repository }}/compare/${{ github.event.inputs.previous_version }}...$RELEASE_TAG)**" >> changelog.md
 
       - name: Get Contributors
         run: |
           echo "### Contributors" >> changelog.md
-          git shortlog -sne ${{ github.event.inputs.previous_version }}..main | awk '{$1=""; print "- "$0}' >> changelog.md
+          CONTRIBUTORS=$(git log --format="%an %ae" ${{ github.event.inputs.previous_version }}..main | sort | uniq)
+
+          while IFS= read -r contributor; do
+            name=$(echo $contributor | awk '{print $1, $2}')
+            email=$(echo $contributor | awk '{print $3}')
+            username=$(echo $email | sed -E 's/@.*//')
+
+            echo "![Avatar](https://github.com/$username.png?size=50) [$username](https://github.com/$username)" >> changelog.md
+          done <<< "$CONTRIBUTORS"
+          
           echo "" >> changelog.md
 
       - name: Display Changelog
@@ -58,14 +61,14 @@ jobs:
       - name: Upload Release Assets
         run: |
           mkdir -p release-assets
-          echo "Sample release asset" > release-assets/sample.txt  # Example asset
+          echo "Sample release asset" > release-assets/sample.txt
         if: always()
 
       - name: Create Draft Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
-          name: "${{ env.RELEASE_TAG }}"
+          name: "Release ${{ env.RELEASE_TAG }}"
           body_path: changelog.md
           draft: true
           files: release-assets/*
