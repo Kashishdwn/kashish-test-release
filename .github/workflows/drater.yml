@@ -34,7 +34,7 @@ jobs:
 
           # Check changes per directory
           for dir in aws istio kubernetes; do
-            echo "### ${dir^} Kyverno Policies" >> changelog.md
+            echo "### 🔹 ${dir^} Kyverno Policies" >> changelog.md
             CHANGES=$(git log --pretty=format:"- %s (@%an) [#%h]" ${{ github.event.inputs.previous_version }}..HEAD -- $dir/ || true)
             if [[ -z "$CHANGES" ]]; then
               echo "- No changes in $dir/" >> changelog.md
@@ -45,7 +45,7 @@ jobs:
           done
 
           # Collect Misc Changes (Changes outside aws, istio, kubernetes)
-          echo "### Misc Changes" >> changelog.md
+          echo "### 🛠 Misc Changes" >> changelog.md
           MISC_CHANGES=$(git log --pretty=format:"- %s (@%an) [#%h]" --invert-grep --grep="aws/" --grep="istio/" --grep="kubernetes/" ${{ github.event.inputs.previous_version }}..HEAD || true)
           if [[ -n "$MISC_CHANGES" ]]; then
             echo "$MISC_CHANGES" >> changelog.md
