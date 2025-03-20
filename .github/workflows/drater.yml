@@ -57,19 +57,14 @@ jobs:
 
           echo "**[🔍 See all changes](https://github.com/${{ github.repository }}/compare/${{ github.event.inputs.previous_version }}...$RELEASE_TAG)**" >> changelog.md
 
-      - name: Get Contributors
-        run: |
-          echo "### Contributors" >> changelog.md
-          git shortlog -sne ${{ github.event.inputs.previous_version }}..main | awk '{$1=""; print "- "$0}' >> changelog.md
-          echo "" >> changelog.md
+      # - name: Get Contributors
+      #   run: |
+      #     echo "### Contributors" >> changelog.md
+      #     git shortlog -sne ${{ github.event.inputs.previous_version }}..main | awk '{$1=""; print "- "$0}' >> changelog.md
+      #     echo "" >> changelog.md
 
       - name: Display Changelog
         run: cat changelog.md
-
-      - name: Upload Release Assets
-        run: |
-          mkdir -p release-assets
-          echo "Sample release asset" > release-assets/sample.txt
 
       - name: Create Draft Release
         uses: softprops/action-gh-release@v2
