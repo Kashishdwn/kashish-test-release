@@ -1,0 +1,94 @@
+name: Release Tagging and Changelog Generation
+
+on:
+  workflow_dispatch:
+    inputs:
+      previous_release:
+        description: 'Previous release version (e.g., release/202503)'
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  generate-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set Variables
+        id: set_vars
+        run: |
+          YEAR=$(date +'%Y')
+          MONTH=$(date +'%m')
+          NEW_TAG="release/${YEAR}${MONTH}"
+
+          echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
+          echo "PREV_TAG=${{ github.event.inputs.previous_release }}" >> $GITHUB_ENV
+
+      - name: Get merged PRs since last release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Fetching PRs merged since $PREV_TAG..."
+          PRS=$(gh pr list --repo ${{ github.repository }} --state merged --json title,number,author --limit 100 --search "merged:>$PREV_TAG")
+          
+          echo "$PRS" > prs.json
+          cat prs.json
+
+      - name: Categorize PRs and generate changelog
+        run: |
+          echo "## 1ES Policy Release of $(date +'%B %Y')" > changelog.md
+          echo "" >> changelog.md
+
+          declare -A CATEGORIES=(
+            ["AWS"]=""
+            ["Istio"]=""
+            ["Kubernetes"]=""
+            ["QA Framework"]=""
+            ["Misc."]=""
+          )
+
+          while read -r line; do
+            PR_NUMBER=$(echo $line | jq -r '.number')
+            PR_TITLE=$(echo $line | jq -r '.title')
+            PR_AUTHOR=$(echo $line | jq -r '.author.login')
+
+            # Get changed files in PR
+            CHANGED_FILES=$(gh pr view $PR_NUMBER --repo ${{ github.repository }} --json files --jq '.files[].path')
+
+            ENTRY="- $PR_TITLE @$PR_AUTHOR (#$PR_NUMBER)"
+
+            if echo "$CHANGED_FILES" | grep -q "packages/kyverno/charts/aws"; then
+              CATEGORIES["AWS"]+="$ENTRY"$'\n'
+            elif echo "$CHANGED_FILES" | grep -q "packages/kyverno/charts/istio"; then
+              CATEGORIES["Istio"]+="$ENTRY"$'\n'
+            elif echo "$CHANGED_FILES" | grep -q "packages/kyverno/charts/kubernetes"; then
+              CATEGORIES["Kubernetes"]+="$ENTRY"$'\n'
+            elif echo "$CHANGED_FILES" | grep -q "packages/end-to-end-validation"; then
+              CATEGORIES["QA Framework"]+="$ENTRY"$'\n'
+            else
+              CATEGORIES["Misc."]+="$ENTRY"$'\n'
+            fi
+          done < <(jq -c '.[]' prs.json)
+
+          for CATEGORY in "AWS" "Istio" "Kubernetes" "QA Framework" "Misc."; do
+            if [ -n "${CATEGORIES[$CATEGORY]}" ]; then
+              echo "### $CATEGORY" >> changelog.md
+              echo "${CATEGORIES[$CATEGORY]}" >> changelog.md
+              echo "" >> changelog.md
+            fi
+          done
+
+          echo "See details of [all code changes](https://github.com/${{ github.repository }}/compare/${{ env.PREV_TAG }}...${{ env.NEW_TAG }}) since previous release" >> changelog.md
+          cat changelog.md
+
+      - name: Create new release tag and publish changelog
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NEW_TAG=${{ env.NEW_TAG }}
+          gh release create $NEW_TAG -t "$NEW_TAG" -n "$(cat changelog.md)" --draft
