@@ -24,16 +24,20 @@ jobs:
 
       - name: Generate Release Tag
         run: |
-          RELEASE_TAG="release/$(date +%Y%m%d%H%M%S)"
+          RELEASE_TAG="release/$(date +%Y%m)"
           echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
 
       - name: Generate Changelog
         run: |
           echo "# Changelog since ${{ github.event.inputs.previous_version }}" > changelog.md
+          echo "## 1ES Policy Release of $(date "+%B %Y")" >> changelog.md
           echo "" >> changelog.md
 
           # Check changes per directory
-          for dir in aws istio kubernetes; do
+          aws="packages/kyverno/charts/aws"
+          istio="packages/kyverno/charts/istio"
+          kubernetes="packages/kyverno/charts/kubernetes"
+          for dir in ${aws} ${istio} ${kubernetes}; do
             echo "### 🔹 ${dir^} Kyverno Policies" >> changelog.md
             CHANGES=$(git log --pretty=format:"- %s (@%an) [#%h]" ${{ github.event.inputs.previous_version }}..HEAD -- $dir/ || true)
             if [[ -z "$CHANGES" ]]; then
