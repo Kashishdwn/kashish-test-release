@@ -31,11 +31,12 @@ jobs:
           echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
           echo "PREV_TAG=${{ github.event.inputs.previous_release }}" >> $GITHUB_ENV
 
-          # Fetch actual tag creation timestamp
-          TAG_SHA=$(gh api repos/${{ github.repository }}/git/ref/tags/$PREV_TAG | jq -r '.object.sha')
-          PREV_DATE=$(gh api repos/${{ github.repository }}/git/tags/$TAG_SHA | jq -r '.tagger.date')
-
-          echo "Previous tag was created on: $PREV_DATE"
+          # Fetch the SHA of the previous release tag
+          TAG_SHA=$(gh api repos/${{ github.repository }}/git/ref/tags/$PREV_TAG --jq '.object.sha')
+          PREV_DATE=$(gh api repos/${{ github.repository }}/commits/$TAG_SHA | jq -r '.commit.committer.date')
+          echo "Previous release tag timestamp: $PREV_DATE"
+          
+          echo "TAG_SHA=$TAG_SHA" >> $GITHUB_ENV
           echo "PREV_DATE=$PREV_DATE" >> $GITHUB_ENV
 
       - name: Get merged PRs since last release
@@ -43,7 +44,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Fetching PRs merged since $PREV_TAG..."
-          PRS=$(gh pr list --repo ${{ github.repository }} --state merged --json title,number,author --search "merged:>=$(date -u -d "$PREV_DATE" +'%Y-%m-%dT%H:%M:%SZ')")
+          PRS=$(gh pr list --repo ${{ github.repository }} --state merged --json title,number,author --search "merged:>=$(date -u -d \"$PREV_DATE\" +'%Y-%m-%dT%H:%M:%SZ')")
               
           echo "$PRS" > prs.json
           cat prs.json
