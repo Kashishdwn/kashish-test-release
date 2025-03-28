@@ -24,9 +24,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          YEAR=$(date +'%Y')
-          MONTH=$(date +'%m')
-          NEW_TAG="release/${YEAR}${MONTH}"
+          NEW_TAG="release/$(date +'%Y%m')"
           PREV_TAG=${{ github.event.inputs.previous_release }}
 
           # Fetch the timestamp of previous release tag
