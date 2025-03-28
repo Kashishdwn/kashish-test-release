@@ -33,7 +33,9 @@ jobs:
 
           # Fetch the SHA of the previous release tag
           TAG_SHA=$(gh api repos/${{ github.repository }}/git/ref/tags/$PREV_TAG | jq -r '.object.sha')
+          echo $TAG_SHA
           PREV_DATE=$(gh api repos/${{ github.repository }}/commits/$TAG_SHA | jq -r '.commit.committer.date')
+          echo $PREV_DATE
           echo "Previous release tag timestamp: $PREV_DATE"
           
           echo "TAG_SHA=$TAG_SHA" >> $GITHUB_ENV
