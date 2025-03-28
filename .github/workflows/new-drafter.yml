@@ -62,7 +62,7 @@ jobs:
             ["Istio"]=""
             ["Kubernetes"]=""
             ["QA Framework"]=""
-            ["Misc"]=""
+            ["Misc."]=""
           )
 
           AWS="packages/kyverno/charts/aws"
@@ -98,12 +98,12 @@ jobs:
               MATCHED=true
             fi
             if [ "$MATCHED" = false ]; then
-              CATEGORIES["Misc"]+="$ENTRY"$'\n'
+              CATEGORIES["Misc."]+="$ENTRY"$'\n'
             fi
 
           done < <(jq -c '.[]' prs.json)
 
-          for CATEGORY in "AWS" "Istio" "Kubernetes" "QA Framework" "Misc"; do
+          for CATEGORY in "AWS" "Istio" "Kubernetes" "QA Framework" "Misc."; do
             if [ -n "${CATEGORIES[$CATEGORY]}" ]; then
               echo "### $CATEGORY" >> changelog.md
               echo "${CATEGORIES[$CATEGORY]}" >> changelog.md
