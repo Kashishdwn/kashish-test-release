@@ -29,18 +29,19 @@ jobs:
           NEW_TAG="release/${YEAR}${MONTH}"
 
           echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
+          echo $NEW_TAG
           echo "PREV_TAG=${{ github.event.inputs.previous_release }}" >> $GITHUB_ENV
           echo $PREV_TAG
 
-          # Fetch the SHA of the previous release tag
-          TAG_SHA=$(gh api repos/${{ github.repository }}/git/ref/tags/$PREV_TAG | jq -r '.object.sha')
-          echo $TAG_SHA
-          PREV_DATE=$(gh api repos/${{ github.repository }}/commits/$TAG_SHA | jq -r '.commit.committer.date')
-          echo $PREV_DATE
-          echo "Previous release tag timestamp: $PREV_DATE"
+          # # Fetch the SHA of the previous release tag
+          # TAG_SHA=$(gh api repos/${{ github.repository }}/git/ref/tags/$PREV_TAG | jq -r '.object.sha')
+          # echo $TAG_SHA
+          # PREV_DATE=$(gh api repos/${{ github.repository }}/commits/$TAG_SHA | jq -r '.commit.committer.date')
+          # echo $PREV_DATE
+          # echo "Previous release tag timestamp: $PREV_DATE"
           
-          echo "TAG_SHA=$TAG_SHA" >> $GITHUB_ENV
-          echo "PREV_DATE=$PREV_DATE" >> $GITHUB_ENV
+          # echo "TAG_SHA=$TAG_SHA" >> $GITHUB_ENV
+          # echo "PREV_DATE=$PREV_DATE" >> $GITHUB_ENV
 
       - name: Get merged PRs since last release
         env:
