@@ -45,7 +45,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Fetching PRs merged since $PREV_TAG..."
-          PRS=$(gh pr list --repo ${{ github.repository }} --state merged --json title,number,author --search "merged:>=$(date -u -d \"$PREV_DATE\" +'%Y-%m-%dT%H:%M:%SZ')")
+          PRS=$(gh pr list --repo ${{ github.repository }} --state merged --json title,number,author --search "merged:>=$(date -u -d "$PREV_DATE" +'%Y-%m-%dT%H:%M:%SZ')")
               
           echo "$PRS" > prs.json
           cat prs.json
