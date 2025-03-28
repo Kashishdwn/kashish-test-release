@@ -92,7 +92,7 @@ jobs:
             if echo "$CHANGED_FILES" | grep -q "$QA_FRAMEWORK"; then
               CATEGORIES["QA Framework"]+="$ENTRY"$'\n'
             fi
-            if ! echo "$CHANGED_FILES" | grep -qE "$AWS|$ISTIO|$KUBERNETES|$QA_FRAMEWORK"; then
+            if echo "$CHANGED_FILES" | grep -qE "$AWS|$ISTIO|$KUBERNETES|$QA_FRAMEWORK"; then
               CATEGORIES["Misc"]+="$ENTRY"$'\n'
             fi
           done < <(jq -c '.[]' prs.json)
