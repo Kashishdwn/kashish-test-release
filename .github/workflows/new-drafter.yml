@@ -105,7 +105,7 @@ jobs:
 
           done < <(jq -c '.[]' prs.json)
 
-          for CATEGORY in "AWS" "Istio" "Kubernetes" "QA Framework" "Misc."; do
+          for CATEGORY in "AWS" "Istio" "Kubernetes" "QA Framework" "Misc"; do
             echo "Category: $CATEGORY"
             echo "${CATEGORIES[$CATEGORY]}"
             if [ -n "${CATEGORIES[$CATEGORY]}" ]; then
