@@ -77,7 +77,7 @@ jobs:
 
             # Get changed files in PR
             CHANGED_FILES=$(gh pr view $PR_NUMBER --repo ${{ github.repository }} --json files --jq '.files[].path' || echo "")
-            echo "$CHANGED_FILES"
+            echo "$CHANGED_FILES\n"
 
             ENTRY="- $PR_TITLE @$PR_AUTHOR (#$PR_NUMBER)"
             MATCHED=false
