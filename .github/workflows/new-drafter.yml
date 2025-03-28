@@ -27,14 +27,15 @@ jobs:
           YEAR=$(date +'%Y')
           MONTH=$(date +'%m')
           NEW_TAG="release/${YEAR}${MONTH}"
+          PREV_TAG=${{ github.event.inputs.previous_release }}
 
           echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
-          echo "PREV_TAG=${{ github.event.inputs.previous_release }}" >> $GITHUB_ENV
+          echo "PREV_TAG=$PREV_TAG" >> $GITHUB_ENV
 
           # Fetch the SHA of the previous release tag
-          TAG_SHA=$(gh api repos/${{ github.repository }}/git/ref/tags/${{ github.event.inputs.previous_release }} | jq -r '.object.sha')
+          TAG_SHA=$(gh api repos/${{ github.repository }}/git/ref/tags/$PREV_TAG | jq -r '.object.sha')
           PREV_DATE=$(gh api repos/${{ github.repository }}/commits/$TAG_SHA | jq -r '.commit.committer.date')
-          echo "Previous release tag timestamp: $PREV_DATE $TAG_SHA"
+          echo "Previous release tag timestamp: $PREV_DATE"
           
           echo "TAG_SHA=$TAG_SHA" >> $GITHUB_ENV
           echo "PREV_DATE=$PREV_DATE" >> $GITHUB_ENV
