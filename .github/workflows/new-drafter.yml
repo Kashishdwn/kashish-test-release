@@ -28,14 +28,17 @@ jobs:
 
           echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
           echo "PREV_TAG=${{ github.event.inputs.previous_release }}" >> $GITHUB_ENV
+          # Get actual tag creation timestamp
+          PREV_DATE=$(gh api repos/${{ github.repository }}/git/ref/tags/$PREV_TAG | jq -r '.object.url' | xargs curl -s | jq -r '.tagger.date')
+          echo "PREV_DATE=$PREV_DATE" >> $GITHUB_ENV
 
       - name: Get merged PRs since last release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Fetching PRs merged since $PREV_TAG..."
-          PRS=$(gh pr list --repo ${{ github.repository }} --state merged --json title,number,author --limit 100 --search "merged:>$PREV_TAG")
-          
+          PRS=$(gh pr list --repo ${{ github.repository }} --state merged --json title,number,author --search "merged:>=$PREV_DATE")
+              
           echo "$PRS" > prs.json
           cat prs.json
 
