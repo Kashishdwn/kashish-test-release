@@ -77,7 +77,7 @@ jobs:
 
             # Get changed files in PR
             CHANGED_FILES=$(gh pr view $PR_NUMBER --repo ${{ github.repository }} --json files --jq '.files[].path' || echo "")
-            echo "$CHANGED_FILES\n"
+            echo $CHANGED_FILES$'\n'
 
             ENTRY="- $PR_TITLE @$PR_AUTHOR (#$PR_NUMBER)"
             MATCHED=false
@@ -98,14 +98,16 @@ jobs:
               CATEGORIES["QA Framework"]+="$ENTRY"$'\n'
               MATCHED=true
             fi
-            # If no match was found, categorize as Misc and log it
             if [ "$MATCHED" = false ]; then
+              echo "PR #$PR_NUMBER didn't match any category, adding to Misc."
               CATEGORIES["Misc"]+="$ENTRY"$'\n'
             fi
 
           done < <(jq -c '.[]' prs.json)
 
           for CATEGORY in "AWS" "Istio" "Kubernetes" "QA Framework" "Misc."; do
+            echo "Category: $CATEGORY"
+            echo "${CATEGORIES[$CATEGORY]}"
             if [ -n "${CATEGORIES[$CATEGORY]}" ]; then
               echo "### $CATEGORY" >> changelog.md
               echo "${CATEGORIES[$CATEGORY]}" >> changelog.md
