@@ -77,22 +77,29 @@ jobs:
 
             # Get changed files in PR
             CHANGED_FILES=$(gh pr view $PR_NUMBER --repo ${{ github.repository }} --json files --jq '.files[].path' || echo "")
+            echo "$CHANGED_FILES"
 
             ENTRY="- $PR_TITLE @$PR_AUTHOR (#$PR_NUMBER)"
+            MATCHED=false
 
             if echo "$CHANGED_FILES" | grep -q "$AWS"; then
               CATEGORIES["AWS"]+="$ENTRY"$'\n'
+              MATCHED=true
             fi
             if echo "$CHANGED_FILES" | grep -q "$ISTIO"; then
               CATEGORIES["Istio"]+="$ENTRY"$'\n'
+              MATCHED=true
             fi
             if echo "$CHANGED_FILES" | grep -q "$KUBERNETES"; then
               CATEGORIES["Kubernetes"]+="$ENTRY"$'\n'
+              MATCHED=true
             fi
             if echo "$CHANGED_FILES" | grep -q "$QA_FRAMEWORK"; then
               CATEGORIES["QA Framework"]+="$ENTRY"$'\n'
+              MATCHED=true
             fi
-            if ! echo "$CHANGED_FILES" | grep -qE "${AWS}|${ISTIO}|${KUBERNETES}|${QA_FRAMEWORK}"; then
+            # If no match was found, categorize as Misc and log it
+            if [ "$MATCHED" = false ]; then
               CATEGORIES["Misc"]+="$ENTRY"$'\n'
             fi
 
