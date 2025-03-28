@@ -21,6 +21,8 @@ jobs:
 
       - name: Set Variables
         id: set_vars
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           YEAR=$(date +'%Y')
           MONTH=$(date +'%m')
@@ -28,8 +30,12 @@ jobs:
 
           echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
           echo "PREV_TAG=${{ github.event.inputs.previous_release }}" >> $GITHUB_ENV
-          # Get actual tag creation timestamp
-          PREV_DATE=$(gh api repos/${{ github.repository }}/git/ref/tags/$PREV_TAG | jq -r '.object.url' | xargs curl -s | jq -r '.tagger.date')
+
+          # Fetch actual tag creation timestamp
+          TAG_SHA=$(gh api repos/${{ github.repository }}/git/ref/tags/$PREV_TAG | jq -r '.object.sha')
+          PREV_DATE=$(gh api repos/${{ github.repository }}/git/tags/$TAG_SHA | jq -r '.tagger.date')
+
+          echo "Previous tag was created on: $PREV_DATE"
           echo "PREV_DATE=$PREV_DATE" >> $GITHUB_ENV
 
       - name: Get merged PRs since last release
@@ -37,7 +43,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Fetching PRs merged since $PREV_TAG..."
-          PRS=$(gh pr list --repo ${{ github.repository }} --state merged --json title,number,author --search "merged:>=$PREV_DATE")
+          PRS=$(gh pr list --repo ${{ github.repository }} --state merged --json title,number,author --search "merged:>=$(date -u -d "$PREV_DATE" +'%Y-%m-%dT%H:%M:%SZ')")
               
           echo "$PRS" > prs.json
           cat prs.json
@@ -61,7 +67,7 @@ jobs:
             PR_AUTHOR=$(echo $line | jq -r '.author.login')
 
             # Get changed files in PR
-            CHANGED_FILES=$(gh pr view $PR_NUMBER --repo ${{ github.repository }} --json files --jq '.files[].path')
+            CHANGED_FILES=$(gh pr view $PR_NUMBER --repo ${{ github.repository }} --json files --jq '.files[].path' || echo "")
 
             ENTRY="- $PR_TITLE @$PR_AUTHOR (#$PR_NUMBER)"
 
