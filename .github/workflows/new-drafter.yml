@@ -29,7 +29,7 @@ jobs:
 
           # Fetch the timestamp of previous release tag
           PREV_RELEASE_DATE=$(gh release view $PREV_TAG --json publishedAt -R ${{ github.repository }} | jq -r '.publishedAt')
-          TAG_SHA=$(gh api repos/${{ github.repository }}/git/ref/tags/$PREV_TAG | jq -r '.object.sha')
+          TAG_SHA=$(gh api repos/${{ github.repository }}/git/ref/heads/main | jq -r '.object.sha')
           echo "Previous release tag $PREV_TAG timestamp: $PREV_RELEASE_DATE"
 
           echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
@@ -42,7 +42,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Fetching PRs merged since $PREV_TAG..."
-          PRS=$(gh pr list --repo ${{ github.repository }} --state merged --json title,number,author --search "merged:>=$(date -u -d "$PREV_RELEASE_DATE" +'%Y-%m-%dT%H:%M:%SZ')")
+          PRS=$(gh pr list --repo ${{ github.repository }} --state merged --base main --json title,number,author --search "merged:>=$(date -u -d "$PREV_RELEASE_DATE" +'%Y-%m-%dT%H:%M:%SZ')")
               
           echo "$PRS" > prs.json
           cat prs.json
