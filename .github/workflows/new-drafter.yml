@@ -51,6 +51,8 @@ jobs:
           cat prs.json
 
       - name: Categorize PRs and generate changelog
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "## 1ES Policy Release of $(date +'%B %Y')" > changelog.md
           echo "" >> changelog.md
