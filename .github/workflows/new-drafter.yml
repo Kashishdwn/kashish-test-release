@@ -29,11 +29,13 @@ jobs:
 
           # Fetch the timestamp of previous release tag
           PREV_RELEASE_DATE=$(gh release view $PREV_TAG --json publishedAt -R ${{ github.repository }} | jq -r '.publishedAt')
-          echo "Previous release tag timestamp: $PREV_RELEASE_DATE"
+          TAG_SHA=$(gh api repos/${{ github.repository }}/git/ref/tags/$PREV_TAG | jq -r '.object.sha')
+          echo "Previous release tag $PREV_TAG timestamp: $PREV_RELEASE_DATE"
 
           echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
           echo "PREV_TAG=$PREV_TAG" >> $GITHUB_ENV
           echo "PREV_RELEASE_DATE=$PREV_RELEASE_DATE" >> $GITHUB_ENV
+          echo "TAG_SHA=$TAG_SHA" >> $GITHUB_ENV
 
       - name: Get merged PRs since last release
         env:
@@ -106,7 +108,7 @@ jobs:
             fi
           done
 
-          echo "See details of [all code changes](https://github.com/${{ github.repository }}/compare/${{ env.PREV_TAG }}...${{ env.NEW_TAG }}) since previous release" >> changelog.md
+          echo "See details of [all code changes](https://github.com/${{ github.repository }}/compare/${{ env.PREV_TAG }}...${{ env.TAG_SHA }}) since previous release" >> changelog.md
           cat changelog.md
 
       - name: Create new release tag and publish changelog
