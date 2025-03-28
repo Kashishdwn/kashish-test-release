@@ -32,7 +32,7 @@ jobs:
           echo "PREV_TAG=${{ github.event.inputs.previous_release }}" >> $GITHUB_ENV
 
           # Fetch the SHA of the previous release tag
-          TAG_SHA=$(gh api repos/${{ github.repository }}/git/ref/tags/$PREV_TAG | jq '.object.sha')
+          TAG_SHA=$(gh api repos/${{ github.repository }}/git/ref/tags/$PREV_TAG | jq -r '.object.sha')
           PREV_DATE=$(gh api repos/${{ github.repository }}/commits/$TAG_SHA | jq -r '.commit.committer.date')
           echo "Previous release tag timestamp: $PREV_DATE"
           
