@@ -30,6 +30,7 @@ jobs:
 
           echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
           echo "PREV_TAG=${{ github.event.inputs.previous_release }}" >> $GITHUB_ENV
+          echo $PREV_TAG
 
           # Fetch the SHA of the previous release tag
           TAG_SHA=$(gh api repos/${{ github.repository }}/git/ref/tags/$PREV_TAG | jq -r '.object.sha')
